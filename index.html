@@ -1,0 +1,129 @@
+<!doctype html>
+
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Crate comparator v0.0.42</title>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/papercss@1.8.3/dist/paper.min.css">
+  <script type="text/javascript">
+    google.charts.load('current', { 'packages': ['corechart'] });
+
+    function drawChart(title, table, chart_id) {
+      var data = google.visualization.arrayToDataTable(table);
+
+      var options = {
+        title: title,
+        curveType: 'function',
+        legend: { position: 'bottom' }
+      };
+
+      var chart = new google.visualization.LineChart(document.getElementById(chart_id));
+
+      chart.draw(data, options);
+    }
+
+    function compare() {
+      const crate1 = document.getElementById('c1').value;
+      const crate2 = document.getElementById('c2').value;
+
+      if (!crate1 || !crate2) {
+        document.getElementById(chart_id).innerHTML = "Crates must not be empty!";
+        return;
+      }
+
+      var fetched = 0;
+      var dicts = [];
+      var fetch = (crate, chart_id) => {
+        $.ajax({
+          url: "https://crates.io/api/v1/crates/" + crate + "/downloads",
+          success: result => {
+            fetched += 1;
+            const ds = result.version_downloads;
+            const header = [['Day', crate]];
+            dicts[fetched] = {}
+            var dict = dicts[fetched];
+            ds.forEach(info => {
+              if (dict[info.date] == undefined) {
+                dict[info.date] = 0
+              }
+              dict[info.date] += info.downloads;
+            });
+            drawChart(crate, header.concat(Object.entries(dict)), chart_id);
+            console.log(fetched)
+            if (fetched == 2) {
+              var diff = {}
+              Object.keys(dicts[1]).forEach(key => {
+                diff[key] = dicts[1][key] - dicts[2][key];
+              });
+              drawChart(crate1 + " - " + crate2, header.concat(Object.entries(diff)), "curve_chartdiff");
+              var acc_array = {}
+              var acc = 0;
+              Object.keys(diff).forEach(key => {
+                acc += diff[key] || 0;
+                acc_array[key] = acc;
+              });
+              console.log(acc_array);
+              drawChart("Accumulative diff", header.concat(Object.entries(acc_array)), "curve_accdiff");
+              var both = [['Day', crate1, crate2]];
+              Object.keys(dicts[1]).forEach(key => {
+                both.push([key, dicts[1][key], dicts[2][key]]);
+              });
+              console.log(both);
+              drawChart(crate1 + " & " + crate2, both, "curve_chartboth");
+            }
+            if (fetched == 1) {
+              fetch(crate2, 'curve_chart2');
+            }
+          },
+          error: (xhr, status, err) => {
+            document.getElementById(chart_id).innerHTML = "Failed to load data: " + xhr.responseText;
+          }
+        });
+      }
+      fetch(crate1, 'curve_chart1');
+    };
+
+    function swap() {
+      const i1 = document.getElementById('c1');
+      const i2 = document.getElementById('c2');
+      [i1.value, i2.value] = [i2.value, i1.value]
+    }
+
+    function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('crate1')) {
+        document.getElementById('c1').value = urlParams.get('crate1')
+      }
+      if (urlParams.get('crate2')) {
+        document.getElementById('c2').value = urlParams.get('crate2')
+      }
+    }
+  </script>
+</head>
+
+<body onload="init()">
+  <h4 style="margin-left:10px">Crate comparator v0.0.42: compare crate stats from crates.io</h4>
+  <div id="iwrapper" style="display:flex; margin-top:10px; margin-left:10px">
+    <p style="margin-right: 10px">First crate:</p>
+    <input style="margin-right: 10px" type="text" id="c1" value="scylla" />
+    <p style="margin-right: 10px">Second crate:</p>
+    <input style="margin-right: 10px" type="text" id="c2" value="scylla" />
+    <button style="margin-right: 10px" id="compare" onclick="compare()">Compare</button>
+    <button style="margin-right: 10px" id="swap" onclick="swap()">Swap</button>
+  </div>
+  <div id="cwrapper" style="display:flex">
+    <div id="curve_chart1" style="width: 60%; height: 500px"></div>
+    <div id="curve_chart2" style="width: 60%; height: 500px"></div>
+  </div>
+  <div id="curve_chartboth" style="margin-left:auto; margin-right:auto; width: 100%; height: 500px"></div>
+  <div id="wrapperdiff" style="display:flex">
+    <div id="curve_chartdiff" style="width: 60%; height: 500px"></div>
+    <div id="curve_accdiff" style="width: 60%; height: 500px"></div>
+  </div>
+  <footer>By <a href="https://bio.sarna.dev">sarna</a></footer>
+</body>
+
+</html>
