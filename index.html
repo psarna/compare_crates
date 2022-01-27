@@ -58,7 +58,7 @@
               Object.keys(dicts[1]).forEach(key => {
                 diff[key] = dicts[1][key] - dicts[2][key];
               });
-              drawChart(crate1 + " - " + crate2, header.concat(Object.entries(diff)), "curve_chartdiff");
+              drawChart(crate1 + " - " + crate2, [['Day', 'diff']].concat(Object.entries(diff)), "curve_chartdiff");
               var acc_array = {}
               var acc = 0;
               Object.keys(diff).forEach(key => {
@@ -66,7 +66,7 @@
                 acc_array[key] = acc;
               });
               console.log(acc_array);
-              drawChart("Accumulative diff", header.concat(Object.entries(acc_array)), "curve_accdiff");
+              drawChart("Accumulative diff", [['Day', 'diff']].concat(Object.entries(acc_array)), "curve_accdiff");
               var both = [['Day', crate1, crate2]];
               Object.keys(dicts[1]).forEach(key => {
                 both.push([key, dicts[1][key], dicts[2][key]]);
