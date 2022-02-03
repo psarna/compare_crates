@@ -52,11 +52,10 @@
               dict[info.date] += info.downloads;
             });
             drawChart(crate, header.concat(Object.entries(dict)), chart_id);
-            console.log(fetched)
             if (fetched == 2) {
               var diff = {}
               Object.keys(dicts[1]).forEach(key => {
-                diff[key] = dicts[1][key] - dicts[2][key];
+                diff[key] = dicts[1][key] - (dicts[2][key] || 0);
               });
               drawChart(crate1 + " - " + crate2, [['Day', 'diff']].concat(Object.entries(diff)), "curve_chartdiff");
               var acc_array = {}
@@ -65,13 +64,11 @@
                 acc += diff[key] || 0;
                 acc_array[key] = acc;
               });
-              console.log(acc_array);
               drawChart("Accumulative diff", [['Day', 'diff']].concat(Object.entries(acc_array)), "curve_accdiff");
               var both = [['Day', crate1, crate2]];
               Object.keys(dicts[1]).forEach(key => {
-                both.push([key, dicts[1][key], dicts[2][key]]);
+                both.push([key, dicts[1][key], (dicts[2][key] || 0)]);
               });
-              console.log(both);
               drawChart(crate1 + " & " + crate2, both, "curve_chartboth");
             }
             if (fetched == 1) {
