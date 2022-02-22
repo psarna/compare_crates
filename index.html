@@ -36,7 +36,7 @@
 
       var fetched = 0;
       var dicts = [];
-      var fetch = (crate, chart_id) => {
+      var fetch_version_downloads = (crate) => {
         $.ajax({
           url: "https://crates.io/api/v1/crates/" + crate + "/downloads",
           success: result => {
@@ -51,7 +51,6 @@
               }
               dict[info.date] += info.downloads;
             });
-            drawChart(crate, header.concat(Object.entries(dict)), chart_id);
             if (fetched == 2) {
               var diff = {}
               Object.keys(dicts[1]).forEach(key => {
@@ -72,15 +71,53 @@
               drawChart(crate1 + " & " + crate2, both, "curve_chartboth");
             }
             if (fetched == 1) {
-              fetch(crate2, 'curve_chart2');
+              fetch_version_downloads(crate2);
             }
           },
           error: (xhr, status, err) => {
-            document.getElementById(chart_id).innerHTML = "Failed to load data: " + xhr.responseText;
+            document.getElementById("cwrapper").innerHTML = "Failed to load data: " + xhr.responseText;
           }
         });
       }
-      fetch(crate1, 'curve_chart1');
+      fetch_version_downloads(crate1);
+      var total_fetched = 0;
+      var total_downloads = [];
+      var fetch_total_downloads = (crate) => {
+        $.ajax({
+          url: "https://crates.io/api/v1/crates/" + crate,
+          success: result => {
+            total_fetched += 1;
+            total_downloads[total_fetched] = result.crate.downloads;
+            console.log("Downloads: ", total_downloads, result.crate.downloads)
+            if (fetched == 2) {
+              console.log("let's go")
+              var data = google.visualization.arrayToDataTable([
+                ["Crate", "downloads"],
+                [crate1, total_downloads[1]],
+                [crate2, total_downloads[2]],
+              ]);
+              var view = new google.visualization.DataView(data);
+              view.setColumns([0, 1]);
+              var options = {
+                title: "Total downloads",
+                bar: {groupWidth: "55%"},
+                legend: { position: "none" },
+              };
+
+              var chart = new google.visualization.ColumnChart(document.getElementById("compare_total"));
+
+              chart.draw(view, options);
+            }
+            if (fetched == 1) {
+              fetch_total_downloads(crate2);
+            }
+          },
+          error: (xhr, status, err) => {
+            document.getElementById("iwrapper").innerHTML = "Failed to load data: " + xhr.responseText;
+          }
+        });
+      }
+      fetch_total_downloads(crate1);
     };
 
     function swap() {
@@ -113,10 +150,9 @@
     <button style="margin-right: 10px" id="swap" onclick="swap()">Swap</button>
   </div>
   <div id="cwrapper" style="display:flex">
-    <div id="curve_chart1" style="width: 60%; height: 500px"></div>
-    <div id="curve_chart2" style="width: 60%; height: 500px"></div>
+    <div id="curve_chartboth" style="width: 60%; height: 500px"></div>
+    <div id="compare_total" style="width: 60%; height: 500px"></div>
   </div>
-  <div id="curve_chartboth" style="margin-left:auto; margin-right:auto; width: 100%; height: 500px"></div>
   <div id="wrapperdiff" style="display:flex">
     <div id="curve_chartdiff" style="width: 60%; height: 500px"></div>
     <div id="curve_accdiff" style="width: 60%; height: 500px"></div>
