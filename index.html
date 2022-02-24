@@ -88,9 +88,7 @@
           success: result => {
             total_fetched += 1;
             total_downloads[total_fetched] = result.crate.downloads;
-            console.log("Downloads: ", total_downloads, result.crate.downloads)
-            if (fetched == 2) {
-              console.log("let's go")
+            if (total_fetched == 2) {
               var data = google.visualization.arrayToDataTable([
                 ["Crate", "downloads"],
                 [crate1, total_downloads[1]],
@@ -108,7 +106,7 @@
 
               chart.draw(view, options);
             }
-            if (fetched == 1) {
+            if (total_fetched == 1) {
               fetch_total_downloads(crate2);
             }
           },
